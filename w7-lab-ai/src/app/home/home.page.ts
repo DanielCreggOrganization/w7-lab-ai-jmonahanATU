@@ -60,6 +60,19 @@ export class HomePage {
   }
 
   selectImage(url: string) {
-    this.selectedImage = url; //Set the selectedImage property
+    this.selectedImage = url; // Set the selectedImage property
+  }
+
+  onSubmit() {
+    this.isLoading = true;
+    this.output = ''; // Clear previous output
+    setTimeout(() => {
+      this.output = `Generated recipe based on prompt: ${this.prompt}`;
+      this.isLoading = false;
+    }, 2000); // Replace with actual API logic
+  }
+
+  trackByUrl(index: number, item: { url: string, label: string }): string {
+    return item.url;
   }
 }
