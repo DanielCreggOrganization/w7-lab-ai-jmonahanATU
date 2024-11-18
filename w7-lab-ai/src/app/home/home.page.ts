@@ -9,6 +9,9 @@ import { IonHeader, IonToolbar, IonTitle, IonContent,
          IonRippleEffect } from '@ionic/angular/standalone';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { environment } from '../../environments/environment';
+import { cafeOutline } from 'ionicons/icons';
+import { addIcons } from 'ionicons';
+import { GeminiAiService } from '../services/gemini-ai.service';
 
 @Component({
   selector: 'app-home',
@@ -42,7 +45,6 @@ import { environment } from '../../environments/environment';
   ]
 })
 export class HomePage {
-  // Default prompt
   prompt = 'Provide a recipe for these baked goods';
   output = '';
   isLoading = false;
@@ -55,21 +57,36 @@ export class HomePage {
 
   selectedImage = this.availableImages[0].url;
 
+  constructor(private geminiService: GeminiAiService) {
+    addIcons({ cafeOutline });
+  }
+
   get formattedOutput() {
-    return this.output.replace(/\n/g, '<br>');
+    if (!this.output) return '';
+    return this.output
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/^/g, '<p>')
+      .replace(/$/g, '</p>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   }
 
   selectImage(url: string) {
-    this.selectedImage = url; // Set the selectedImage property
+    this.selectedImage = url;
   }
 
-  onSubmit() {
+  async onSubmit() {
+    if (this.isLoading) return;
     this.isLoading = true;
-    this.output = ''; // Clear previous output
-    setTimeout(() => {
-      this.output = `Generated recipe based on prompt: ${this.prompt}`;
-      this.isLoading = false;
-    }, 2000); // Replace with actual API logic
+    this.output = '';
+    
+    try {
+      const base64Image = await this.geminiService.getImageAsBase64(this.selectedImage);
+      this.output = await this.geminiService.generateRecipe(base64Image, this.prompt);
+    } catch (e) {
+      this.output = `Error: ${e instanceof Error ? e.message : 'Something went wrong'}`;
+    }
+    
+    this.isLoading = false;
   }
 
   trackByUrl(index: number, item: { url: string, label: string }): string {
